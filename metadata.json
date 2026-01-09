@@ -1,0 +1,7 @@
+{
+  "name": "MotoYa",
+  "description": "Una aplicación de transporte en motocicleta rápida y segura, inspirada en Uber Moto, con funcionalidades de solicitud de viajes, métodos de pago y seguimiento en tiempo real.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
