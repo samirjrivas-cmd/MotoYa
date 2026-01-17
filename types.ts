@@ -1,31 +1,42 @@
 
 export enum AppScreen {
+  ROLE_SELECTOR = 'ROLE_SELECTOR',
   LOGIN = 'LOGIN',
-  HOME = 'HOME',
+  HOME = 'HOME', // Home de Usuario
+  DRIVER_DASHBOARD = 'DRIVER_DASHBOARD', // Home de Motorizado
   PAYMENTS = 'PAYMENTS',
   HISTORY = 'HISTORY',
-  TRIP_ACTIVE = 'TRIP_ACTIVE'
+  TRIP_ACTIVE = 'TRIP_ACTIVE',
+  MEGASOFT_PAYMENT = 'MEGASOFT_PAYMENT',
+  RATING = 'RATING'
 }
 
-export interface Trip {
+export type UserRole = 'USER' | 'DRIVER';
+
+export interface User {
   id: string;
-  driverName: string;
-  driverRating: number;
-  vehicle: string;
-  price: string;
-  status: 'Finalizado' | 'Cancelado';
-  origin: string;
-  destination: string;
-  time: string;
-  date: string;
-  driverImg: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar: string;
+  phone: string;
 }
 
-export interface PaymentMethod {
+export interface Driver extends User {
+  vehicleModel: string;
+  plate: string;
+  rating: number;
+  isVerified: boolean;
+  isOnline: boolean;
+  currentLocation?: { lat: number; lng: number };
+}
+
+export interface RideRequest {
   id: string;
-  type: 'Pago Móvil' | 'Tarjeta' | 'Zelle' | 'Otros';
-  detail: string;
-  isDefault?: boolean;
-  bank?: string;
-  icon: string;
+  userId: string;
+  origin: { x: number; y: number; address: string };
+  destination: { x: number; y: number; address: string };
+  price: number;
+  status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'canceled';
+  driverId?: string;
 }
