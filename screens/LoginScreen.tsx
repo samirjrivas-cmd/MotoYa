@@ -1,89 +1,91 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 
 interface LoginScreenProps {
   onLogin: () => void;
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
+  const [isRegister, setIsRegister] = useState(false);
+  const [role, setRole] = useState<'USER' | 'DRIVER'>('USER');
+
   return (
-    <div className="flex flex-col h-screen p-6 animate-fadeIn">
+    <div className="flex flex-col h-screen p-6 animate-fadeIn bg-white overflow-y-auto no-scrollbar">
       <div className="flex items-center mb-10">
-        <button className="text-gray-800 text-xl">
+        <button onClick={() => setIsRegister(false)} className="text-gray-800 text-xl">
           <i className="fa-solid fa-arrow-left"></i>
         </button>
-        <h1 className="flex-1 text-center font-bold text-lg text-gray-900">Iniciar Sesión</h1>
+        <h1 className="flex-1 text-center font-bold text-lg text-gray-900">
+          {isRegister ? 'Crear Cuenta' : 'Iniciar Sesión'}
+        </h1>
       </div>
 
-      <div className="flex flex-col items-center mb-12">
-        <div className="w-24 h-24 moto-gradient rounded-3xl flex items-center justify-center shadow-lg mb-4">
-          <i className="fa-solid fa-motorcycle text-white text-4xl"></i>
+      <div className="flex flex-col items-center mb-8">
+        <div className="w-20 h-20 moto-gradient rounded-3xl flex items-center justify-center shadow-lg mb-4">
+          <i className="fa-solid fa-motorcycle text-white text-3xl"></i>
         </div>
-        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">MotoYa</h2>
-        <p className="text-gray-500 text-sm mt-1">Tu viaje seguro y rápido</p>
+        <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">MotoYa</h2>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-6 pb-10">
         <div className="text-center">
-          <h3 className="text-2xl font-bold text-gray-800">¡Hola de nuevo! 👋</h3>
-          <p className="text-gray-400 text-sm mt-1">Ingresa tus datos para continuar</p>
+          <h3 className="text-xl font-bold text-gray-800">
+            {isRegister ? 'Únete a la red más rápida' : '¡Hola de nuevo! 👋'}
+          </h3>
+          <p className="text-gray-400 text-xs mt-1">Completa los datos para continuar</p>
         </div>
 
         <div className="space-y-4">
+          {isRegister && (
+             <div className="space-y-4 animate-fadeIn">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nombre Completo</label>
+                  <input type="text" placeholder="Juan Pérez" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                </div>
+                
+                {/* Campos específicos para conductores */}
+                <div className="p-4 bg-blue-50 rounded-3xl space-y-4 border border-blue-100">
+                   <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] text-center">Datos de Pago (Obligatorio)</p>
+                   <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-500 uppercase">Banco (Pago Móvil)</label>
+                      <select className="w-full p-4 bg-white border border-blue-100 rounded-2xl outline-none font-bold text-slate-800">
+                        <option value="0102">Banco de Venezuela</option>
+                        <option value="0105">Mercantil</option>
+                        <option value="0108">Provincial</option>
+                        <option value="0134">Banesco</option>
+                      </select>
+                   </div>
+                   <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-500 uppercase">Número Telefónico</label>
+                      <input type="tel" placeholder="04141234567" className="w-full p-4 bg-white border border-blue-100 rounded-2xl outline-none font-bold text-slate-800" />
+                   </div>
+                </div>
+             </div>
+          )}
+
           <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-700">Correo o teléfono</label>
-            <div className="relative">
-              <input 
-                type="text" 
-                placeholder="ej. usuario@email.com"
-                className="w-full p-4 pr-12 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 font-medium placeholder:text-gray-400"
-              />
-              <i className="fa-solid fa-envelope absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            </div>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Correo Electrónico</label>
+            <input type="email" placeholder="usuario@email.com" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-700">Contraseña</label>
-            <div className="relative">
-              <input 
-                type="password" 
-                placeholder="••••••••"
-                className="w-full p-4 pr-12 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 font-medium placeholder:text-gray-400"
-              />
-              <i className="fa-solid fa-eye-slash absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            </div>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Contraseña</label>
+            <input type="password" placeholder="••••••••" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
           </div>
-        </div>
-
-        <div className="flex justify-end">
-          <button className="text-blue-500 text-sm font-medium">¿Olvidaste tu contraseña?</button>
         </div>
 
         <button 
           onClick={onLogin}
-          className="w-full py-4 moto-gradient text-white font-bold rounded-2xl shadow-blue-200 shadow-xl active:scale-[0.98] transition-all"
+          className="w-full py-5 moto-gradient text-white font-black rounded-3xl shadow-blue-200 shadow-xl active:scale-[0.98] transition-all text-lg"
         >
-          Iniciar Sesión
+          {isRegister ? 'Completar Registro' : 'Entrar'}
         </button>
 
-        <div className="relative py-4">
-          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
-          <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-gray-400 font-medium">O continúa con</span></div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <button className="flex items-center justify-center gap-2 py-3 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors">
-            <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" className="w-5 h-5" alt="Google" />
-            <span className="font-semibold text-gray-700">Google</span>
-          </button>
-          <button className="flex items-center justify-center gap-2 py-3 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors">
-            <i className="fa-brands fa-apple text-xl text-gray-900"></i>
-            <span className="font-semibold text-gray-700">Apple</span>
-          </button>
-        </div>
-
         <p className="text-center text-gray-500 text-sm mt-8">
-          ¿No tienes una cuenta? <button className="text-blue-500 font-bold">Regístrate</button>
+          {isRegister ? '¿Ya tienes cuenta?' : '¿No tienes una cuenta?'} 
+          <button onClick={() => setIsRegister(!isRegister)} className="text-blue-600 font-black ml-1 uppercase text-xs tracking-widest">
+            {isRegister ? 'Inicia Sesión' : 'Regístrate'}
+          </button>
         </p>
       </div>
     </div>

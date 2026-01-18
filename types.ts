@@ -28,6 +28,10 @@ export interface Driver extends User {
   rating: number;
   isVerified: boolean;
   isOnline: boolean;
+  paymentInfo: {
+    bankCode: string;
+    phoneNumber: string;
+  };
   currentLocation?: { lat: number; lng: number };
 }
 
