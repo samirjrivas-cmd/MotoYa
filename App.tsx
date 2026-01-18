@@ -23,6 +23,11 @@ const App: React.FC = () => {
     navigateTo(AppScreen.LOGIN);
   };
 
+  const handleLoginSuccess = (role: UserRole) => {
+    setUserRole(role);
+    navigateTo(role === 'DRIVER' ? AppScreen.DRIVER_DASHBOARD : AppScreen.HOME);
+  };
+
   return (
     <div className="max-w-md mx-auto min-h-screen bg-white relative overflow-hidden shadow-2xl">
       {currentScreen === AppScreen.ROLE_SELECTOR && (
@@ -64,9 +69,7 @@ const App: React.FC = () => {
       )}
 
       {currentScreen === AppScreen.LOGIN && (
-        <LoginScreen onLogin={() => {
-          navigateTo(userRole === 'DRIVER' ? AppScreen.DRIVER_DASHBOARD : AppScreen.HOME);
-        }} />
+        <LoginScreen onLogin={handleLoginSuccess} />
       )}
 
       {currentScreen === AppScreen.DRIVER_DASHBOARD && (
