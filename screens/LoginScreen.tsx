@@ -62,7 +62,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       }
     });
     if (authError) throw authError;
+    if (data.user)
     setSuccessMsg('¡Cuenta creada! Revisa tu correo para confirmar.');
+      const role = email.includes('chofer') ? 'DRIVER' : 'USER';
+      onLogin(role)
     setIsRegister(false);
   } catch (err: any) {
     setError(err.message);
