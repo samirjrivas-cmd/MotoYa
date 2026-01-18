@@ -45,6 +45,31 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       setLoading(false);
     }
   };
+   
+   const handleRegister = async () => {
+  setError('');
+  if (!validateInputs()) return;
+  setLoading(true);
+  try {
+    const { data, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          bank: bank, // Aquí guardamos el dato de pago que solicitas
+        }
+      }
+    });
+    if (authError) throw authError;
+    setSuccessMsg('¡Cuenta creada! Revisa tu correo para confirmar.');
+    setIsRegister(false);
+  } catch (err: any) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="flex flex-col h-screen p-8 animate-fadeIn bg-slate-50 overflow-y-auto no-scrollbar">
