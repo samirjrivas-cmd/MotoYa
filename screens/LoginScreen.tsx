@@ -135,12 +135,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         {successMsg && <p className="text-green-600 text-[10px] font-black text-center bg-green-50 p-2 rounded-lg border border-green-100">{successMsg}</p>}
 
         <button 
-          onClick={showReset ? () => {} : (isRegister ? () => {} : handleLogin)}
-          disabled={loading}
-          className="w-full py-5 moto-gradient text-white font-black rounded-2xl shadow-lg active:scale-[0.98] transition-all text-lg flex items-center justify-center gap-2"
-        >
-          {loading ? <i className="fa-solid fa-circle-notch animate-spin"></i> : (showReset ? 'Enviar Link' : isRegister ? 'Registrarme' : 'Entrar')}
-        </button>
+  onClick={showReset ? () => {} : (isRegister ? handleRegister : handleLogin)} // <-- Cambio aquí
+  disabled={loading}
+  className="w-full py-5 moto-gradient text-white font-black rounded-2xl shadow-lg active:scale-[0.98] transition-all text-lg flex items-center justify-center gap-2"
+>
+  {loading ? <i className="fa-solid fa-circle-notch animate-spin"></i> : (showReset ? 'Enviar Link' : isRegister ? 'Registrarme' : 'Entrar')}
+</button>
 
         <div className="flex flex-col gap-3">
           {!isRegister && !showReset && (
