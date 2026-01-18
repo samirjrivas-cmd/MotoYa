@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 interface LoginScreenProps {
@@ -40,24 +39,25 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
              <div className="space-y-4 animate-fadeIn">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nombre Completo</label>
-                  <input type="text" placeholder="Juan Pérez" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                  <input type="text" placeholder="Juan Pérez" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-black" />
                 </div>
                 
                 {/* Campos específicos para conductores */}
                 <div className="p-4 bg-blue-50 rounded-3xl space-y-4 border border-blue-100">
                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] text-center">Datos de Pago (Obligatorio)</p>
                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-500 uppercase">Banco (Pago Móvil)</label>
-                      <select className="w-full p-4 bg-white border border-blue-100 rounded-2xl outline-none font-bold text-slate-800">
-                        <option value="0102">Banco de Venezuela</option>
-                        <option value="0105">Mercantil</option>
-                        <option value="0108">Provincial</option>
-                        <option value="0134">Banesco</option>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider ml-1">Banco (Pago Móvil)</label>
+                      <select required className="w-full p-4 bg-white border border-blue-100 rounded-2xl outline-none font-bold text-black appearance-none">
+                        <option value="">Selecciona tu banco</option>
+                        <option value="0102">0102 - Banco de Venezuela</option>
+                        <option value="0105">0105 - Mercantil</option>
+                        <option value="0108">0108 - Provincial</option>
+                        <option value="0134">0134 - Banesco</option>
                       </select>
                    </div>
                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-500 uppercase">Número Telefónico</label>
-                      <input type="tel" placeholder="04141234567" className="w-full p-4 bg-white border border-blue-100 rounded-2xl outline-none font-bold text-slate-800" />
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider ml-1">Número para Pago Móvil</label>
+                      <input required type="tel" placeholder="04141234567" className="w-full p-4 bg-white border border-blue-100 rounded-2xl outline-none font-bold text-black" />
                    </div>
                 </div>
              </div>
@@ -65,12 +65,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Correo Electrónico</label>
-            <input type="email" placeholder="usuario@email.com" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+            <input type="email" placeholder="usuario@email.com" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-black" />
           </div>
 
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Contraseña</label>
-            <input type="password" placeholder="••••••••" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+            <input type="password" placeholder="••••••••" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-black" />
           </div>
         </div>
 

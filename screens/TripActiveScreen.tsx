@@ -1,13 +1,5 @@
-
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserRole } from '../types';
-
-interface Message {
-  id: string;
-  senderId: string;
-  content: string;
-  timestamp: Date;
-}
 
 interface TripActiveScreenProps {
   onCancel: () => void;
@@ -15,83 +7,86 @@ interface TripActiveScreenProps {
   role?: UserRole;
 }
 
-type TripStage = 'PICKUP' | 'WAITING_FOR_CLIENT' | 'EN_ROUTE' | 'ARRIVED' | 'RATING';
+// Añadimos 'TRACKING' para el trayecto del conductor hacia el usuario
+type TripStep = 'TRACKING' | 'ARRIVED_NOTICE' | 'PAYMENT_SELECTION' | 'CONFIRMING_PAYMENT' | 'IN_TRIP' | 'COMPLETED';
 
 const TripActiveScreen: React.FC<TripActiveScreenProps> = ({ onCancel, onGoToPay, role = 'USER' }) => {
-  const [stage, setStage] = useState<TripStage>('PICKUP');
-  const [userCoords, setUserCoords] = useState({ x: 50, y: 70 });
-  const [motorCoords, setMotorCoords] = useState({ x: 10, y: 10 });
-  const [etaSeconds, setEtaSeconds] = useState(120);
-  const [distanceKm, setDistanceKm] = useState(1.5);
-  
-  // Payment Modal State
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [tripStep, setTripStep] = useState<TripStep>('TRACKING');
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MOBILE_PAY' | null>(null);
   const [copied, setCopied] = useState(false);
+  const [eta, setEta] = useState({ min: 3, km: 1.2 }); // ETA inicial hacia el usuario
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Simulación de datos del conductor asignado
-  const assignedDriver = {
+  // Coordenadas para simulación
+  const [motorCoords, setMotorCoords] = useState({ x: 10, y: 10 });
+  const userLocation = { x: 50, y: 70 };
+  const destinationLocation = { x: 25, y: 25 };
+
+  const driver = {
     name: "Juan Pérez",
-    paymentInfo: {
-      bankCode: "0102 - Banco de Venezuela",
-      phoneNumber: "0414-1234567"
+    vehicle: "Honda CB125 • ABC-123",
+    payment: {
+      bank: "0102 - Banco de Venezuela",
+      phone: "0414-1234567",
+      id: "V-12.345.678"
     }
   };
 
-  // Chat State
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [hasNewMessages, setHasNewMessages] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
-  const destinationCoords = { x: 25, y: 25 };
-  const userId = 'USER_123';
-  const driverId = 'DRIVER_456';
-  const myId = role === 'USER' ? userId : driverId;
-  const receiverId = role === 'USER' ? driverId : userId;
-
+  // Simulación de movimiento y actualización de ETA
   useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    let target = userLocation;
+    
+    if (tripStep === 'TRACKING' || tripStep === 'ARRIVED_NOTICE' || tripStep === 'PAYMENT_SELECTION') {
+      target = userLocation;
+    } else {
+      target = destinationLocation;
     }
-  }, [messages, isChatOpen]);
-
-  useEffect(() => {
-    if (stage === 'ARRIVED') {
-      setShowPaymentModal(true);
-    }
-  }, [stage]);
-
-  useEffect(() => {
-    if (stage === 'ARRIVED' || stage === 'RATING') return;
 
     const moveInterval = setInterval(() => {
       setMotorCoords(prev => {
-        const target = stage === 'PICKUP' ? userCoords : destinationCoords;
         const dx = target.x - prev.x;
         const dy = target.y - prev.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance < 2) {
-          if (stage === 'PICKUP') setStage('WAITING_FOR_CLIENT');
-          if (stage === 'EN_ROUTE') setStage('ARRIVED');
+        // Si llegó al objetivo
+        if (dist < 1) {
+          if (tripStep === 'TRACKING') {
+            setTripStep('ARRIVED_NOTICE');
+          }
           return target;
         }
 
-        const step = 0.5;
+        // Actualizar ETA y KM basados en la distancia restante al target
+        if (tripStep === 'TRACKING' || tripStep === 'IN_TRIP') {
+            setEta(prevEta => ({
+                min: Math.max(0, Math.ceil(dist / 5)), // Simulación simple
+                km: Math.max(0, Number((dist / 10).toFixed(1)))
+            }));
+        }
+
+        const step = 1.2; // Velocidad de simulación
         return {
-          x: prev.x + (dx / distance) * step,
-          y: prev.y + (dy / distance) * step
+          x: prev.x + (dx / dist) * step,
+          y: prev.y + (dy / dist) * step
         };
       });
-
-      setEtaSeconds(prev => Math.max(0, prev - 1));
-      setDistanceKm(prev => Math.max(0, prev - 0.01));
-    }, 1000);
+    }, 800);
 
     return () => clearInterval(moveInterval);
-  }, [stage, userCoords]);
+  }, [tripStep]);
+
+  // Manejo de validación de pago
+  useEffect(() => {
+    if (tripStep === 'CONFIRMING_PAYMENT') {
+      const timer = setTimeout(() => {
+        setTripStep('IN_TRIP');
+        setEta({ min: 12, km: 4.5 }); 
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [tripStep]);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -99,252 +94,264 @@ const TripActiveScreen: React.FC<TripActiveScreenProps> = ({ onCancel, onGoToPay
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleStartTrip = () => {
-    setStage('EN_ROUTE');
-    setEtaSeconds(300);
-    setDistanceKm(3.2);
-  };
-
-  const sendMessage = () => {
-    if (!inputMessage.trim() || stage === 'ARRIVED') return;
-    const newMessage: Message = {
-      id: Math.random().toString(36).substr(2, 9),
-      senderId: myId,
-      content: inputMessage,
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, newMessage]);
-    setInputMessage('');
+  const handleFinalize = () => {
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      onCancel(); 
+    }, 1500);
   };
 
   return (
-    <div className="h-screen flex flex-col relative overflow-hidden bg-slate-900">
-      {/* Background Map View */}
+    <div className="h-screen flex flex-col relative bg-slate-50 overflow-hidden">
+      {/* MAPA INTERACTIVO (SIMULADO) */}
       <div className="absolute inset-0 z-0 bg-slate-200">
-        <img src="https://picsum.photos/seed/mejia_ride/1200/1800" className="w-full h-full object-cover opacity-60 grayscale-[0.3]" alt="Map" />
+        <img 
+          src="https://picsum.photos/seed/motoya_full_map/1200/1800" 
+          className="w-full h-full object-cover opacity-60 grayscale-[0.2]" 
+          alt="Mapa"
+        />
         
-        {/* Indicators Overlay */}
-        {['PICKUP', 'EN_ROUTE'].includes(stage) && (
-          <div className="absolute top-14 left-1/2 -translate-x-1/2 z-40 w-[90%] bg-white/90 backdrop-blur-md rounded-[28px] p-5 shadow-2xl border border-white/50">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white">
-                  <i className="fa-solid fa-bolt text-lg"></i>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Tiempo</p>
-                  <p className="text-xl font-black text-slate-900 leading-none">
-                    {Math.floor(etaSeconds / 60)}:{(etaSeconds % 60).toString().padStart(2, '0')}
-                  </p>
-                </div>
-              </div>
-              <div className="h-8 w-[1px] bg-slate-200"></div>
-              <div className="text-right">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Distancia</p>
-                <p className="text-xl font-black text-blue-600 leading-none">{distanceKm.toFixed(1)} <span className="text-xs font-bold text-slate-400">km</span></p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* User Marker */}
-        <div className="absolute -ml-4 -mt-4 z-10" style={{ left: `${userCoords.x}%`, top: `${userCoords.y}%` }}>
-           <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center border-4 border-blue-600 shadow-lg">
-              <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+        {/* Usuario */}
+        <div className="absolute z-10 -ml-4 -mt-4" style={{ left: `${userLocation.x}%`, top: `${userLocation.y}%` }}>
+           <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center border-4 border-blue-600 shadow-xl">
+              <div className="w-2 bg-blue-600 h-2 rounded-full animate-pulse"></div>
            </div>
         </div>
 
-        {/* Motorcycle Marker */}
-        <div className="absolute -ml-8 -mt-8 z-20 transition-all duration-1000 ease-linear" style={{ left: `${motorCoords.x}%`, top: `${motorCoords.y}%` }}>
-          <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center border-4 border-blue-600 shadow-2xl relative">
-             <i className="fa-solid fa-motorcycle text-blue-600 text-2xl"></i>
+        {/* Destino */}
+        {(tripStep === 'IN_TRIP' || tripStep === 'COMPLETED') && (
+          <div className="absolute z-10 -ml-4 -mt-10 animate-bounce" style={{ left: `${destinationLocation.x}%`, top: `${destinationLocation.y}%` }}>
+             <i className="fa-solid fa-location-dot text-red-600 text-3xl drop-shadow-lg"></i>
+          </div>
+        )}
+
+        {/* Motorizado */}
+        <div className="absolute z-20 -ml-6 -mt-6 transition-all duration-700 ease-linear" style={{ left: `${motorCoords.x}%`, top: `${motorCoords.y}%` }}>
+          <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border-2 border-slate-900 shadow-2xl overflow-hidden">
+             <i className="fa-solid fa-motorcycle text-slate-900 text-xl"></i>
+          </div>
+          <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[8px] font-black px-2 py-1 rounded-full whitespace-nowrap uppercase tracking-widest shadow-lg">
+            {driver.name}
           </div>
         </div>
+
+        {/* Ruta */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-20">
+          <line 
+            x1={`${userLocation.x}%`} y1={`${userLocation.y}%`} 
+            x2={`${destinationLocation.x}%`} y2={`${destinationLocation.y}%`} 
+            stroke="#2563eb" strokeWidth="4" strokeDasharray="8,8"
+          />
+        </svg>
       </div>
 
-      {/* Payment Selection Modal (Triggered on ARRIVED) */}
-      {showPaymentModal && role === 'USER' && (
-        <div className="absolute inset-0 z-[100] bg-slate-900/80 backdrop-blur-xl flex items-center justify-center p-6 animate-fadeIn">
-          <div className="bg-white w-full max-w-sm rounded-[45px] p-8 shadow-2xl transform animate-slideUp">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i className="fa-solid fa-wallet text-blue-600 text-3xl"></i>
-              </div>
-              <h2 className="text-2xl font-black text-slate-900">Finalizar Viaje</h2>
-              <p className="text-slate-400 font-medium mt-1">Selecciona tu método de pago</p>
-              <div className="text-3xl font-black text-blue-600 mt-4">S/ 4.50</div>
+      <div className="relative z-10 flex-1 flex flex-col p-6 overflow-y-auto no-scrollbar pointer-events-none">
+        <div className="pointer-events-auto mt-auto">
+          
+          {/* ESTADO 0: TRACKING (Hacia el usuario) */}
+          {tripStep === 'TRACKING' && (
+            <div className="bg-white rounded-[32px] p-6 shadow-2xl border border-slate-100 animate-slideUp">
+               <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-black text-black leading-none">Tu piloto viene</h3>
+                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">Síguelo en tiempo real</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-black text-black leading-none">{eta.min} <span className="text-xs text-slate-400">min</span></p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase">{eta.km} km</p>
+                  </div>
+               </div>
+               <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
+                  <img src="https://picsum.photos/id/64/100/100" className="w-12 h-12 rounded-xl object-cover" alt="Driver" />
+                  <div className="flex-1">
+                    <p className="font-black text-black leading-none">{driver.name}</p>
+                    <p className="text-[10px] text-slate-400 font-bold mt-1">{driver.vehicle}</p>
+                  </div>
+                  <button className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600">
+                    <i className="fa-solid fa-phone"></i>
+                  </button>
+               </div>
             </div>
+          )}
 
-            {!paymentMethod ? (
-              <div className="space-y-4">
-                <button 
-                  onClick={() => setPaymentMethod('CASH')}
-                  className="w-full flex items-center gap-4 p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl hover:border-blue-500 hover:bg-blue-50 transition-all group"
-                >
-                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                    <i className="fa-solid fa-money-bill-1-wave text-xl"></i>
-                  </div>
-                  <div className="text-left">
-                    <p className="font-black text-slate-900">Efectivo</p>
-                    <p className="text-xs text-slate-400 font-bold uppercase">Pago directo al piloto</p>
-                  </div>
-                </button>
+          {/* ESTADO 1: LLEGADA */}
+          {tripStep === 'ARRIVED_NOTICE' && (
+            <div className="bg-white rounded-[40px] p-8 shadow-2xl border-t-8 border-blue-600 animate-slideUp">
+              <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <i className="fa-solid fa-motorcycle text-blue-600 text-4xl"></i>
+              </div>
+              <h2 className="text-3xl font-black text-center text-black mb-2 leading-tight">¡Tu MotoYa ha llegado!</h2>
+              <p className="text-center text-slate-500 font-medium mb-8">
+                {driver.name} te espera afuera. Identifícalo por su {driver.vehicle}.
+              </p>
+              <button 
+                onClick={() => setTripStep('PAYMENT_SELECTION')}
+                className="w-full py-5 moto-gradient text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all text-xl"
+              >
+                Confirmar encuentro
+              </button>
+            </div>
+          )}
 
+          {/* ESTADO 2: PAGO */}
+          {tripStep === 'PAYMENT_SELECTION' && (
+            <div className="bg-white rounded-[40px] p-8 shadow-2xl animate-slideUp">
+              <h2 className="text-2xl font-black text-black mb-1">¿Cómo quieres pagar?</h2>
+              <p className="text-slate-500 font-medium mb-6">Selecciona el método para este viaje</p>
+              
+              <div className="space-y-4 mb-8">
                 <button 
                   onClick={() => setPaymentMethod('MOBILE_PAY')}
-                  className="w-full flex items-center gap-4 p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                  className={`w-full p-5 rounded-[28px] border-2 transition-all flex items-center gap-4 ${paymentMethod === 'MOBILE_PAY' ? 'border-blue-600 bg-blue-50' : 'border-slate-100 bg-slate-50'}`}
                 >
-                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                    <i className="fa-solid fa-mobile-screen-button text-xl"></i>
+                  <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center">
+                    <i className="fa-solid fa-mobile-screen"></i>
                   </div>
                   <div className="text-left">
-                    <p className="font-black text-slate-900">Pago Móvil</p>
-                    <p className="text-xs text-slate-400 font-bold uppercase">Transferencia inmediata</p>
+                    <p className="font-black text-black">Pago Móvil</p>
+                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Inmediato</p>
                   </div>
                 </button>
-              </div>
-            ) : paymentMethod === 'CASH' ? (
-              <div className="text-center py-6 animate-fadeIn">
-                <p className="text-slate-600 font-medium mb-8">Por favor, entrega el monto acordado al conductor para finalizar el servicio.</p>
+
                 <button 
-                  onClick={() => onGoToPay?.()}
-                  className="w-full py-5 moto-gradient text-white font-black rounded-2xl shadow-xl shadow-blue-100"
+                  onClick={() => setPaymentMethod('CASH')}
+                  className={`w-full p-5 rounded-[28px] border-2 transition-all flex items-center gap-4 ${paymentMethod === 'CASH' ? 'border-green-600 bg-green-50' : 'border-slate-100 bg-slate-50'}`}
                 >
-                  Confirmar Entrega
-                </button>
-                <button onClick={() => setPaymentMethod(null)} className="mt-4 text-xs font-black text-slate-400 uppercase tracking-widest">Cambiar método</button>
-              </div>
-            ) : (
-              <div className="animate-fadeIn">
-                <div className="bg-slate-50 rounded-3xl p-6 mb-6 space-y-4">
-                  <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Banco del Piloto</p>
-                    <p className="font-black text-slate-900">{assignedDriver.paymentInfo.bankCode}</p>
+                  <div className="w-12 h-12 bg-green-600 text-white rounded-2xl flex items-center justify-center">
+                    <i className="fa-solid fa-money-bill-1-wave"></i>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Teléfono Destino</p>
-                      <p className="font-black text-slate-900 text-lg">{assignedDriver.paymentInfo.phoneNumber}</p>
-                    </div>
-                    <button 
-                      onClick={() => handleCopy(assignedDriver.paymentInfo.phoneNumber)}
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${copied ? 'bg-green-500 text-white' : 'bg-white text-blue-600 shadow-sm'}`}
-                    >
+                  <div className="text-left">
+                    <p className="font-black text-black">Efectivo</p>
+                    <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest">Pago manual</p>
+                  </div>
+                </button>
+              </div>
+
+              {paymentMethod === 'MOBILE_PAY' && (
+                <div className="bg-slate-900 rounded-3xl p-6 mb-6 animate-fadeIn text-white pointer-events-auto">
+                  <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Datos Pago Móvil</p>
+                  <p className="font-bold text-sm mb-1">{driver.payment.bank}</p>
+                  <p className="font-bold text-blue-400 text-xs mb-3">{driver.payment.id}</p>
+                  <div className="flex justify-between items-center bg-white/10 p-3 rounded-xl border border-white/10">
+                    <p className="font-black text-lg">{driver.payment.phone}</p>
+                    <button onClick={() => handleCopy(driver.payment.phone)} className={`p-2 rounded-lg ${copied ? 'bg-green-500' : 'bg-blue-600'}`}>
                       <i className={`fa-solid ${copied ? 'fa-check' : 'fa-copy'}`}></i>
                     </button>
                   </div>
                 </div>
-                <button 
-                  onClick={() => onGoToPay?.()}
-                  className="w-full py-5 moto-gradient text-white font-black rounded-2xl shadow-xl shadow-blue-100"
-                >
-                  Ya realicé el pago
-                </button>
-                <button onClick={() => setPaymentMethod(null)} className="w-full mt-4 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Cambiar método</button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Driver Arrived State */}
-      {stage === 'WAITING_FOR_CLIENT' && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
-           <div className="bg-white rounded-[40px] p-8 w-full max-sm shadow-2xl animate-bounceIn text-center">
-              <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                 <i className="fa-solid fa-handshake-angle text-blue-600 text-4xl"></i>
-              </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-2">{role === 'DRIVER' ? '¡Llegaste!' : '¡Tu piloto llegó!'}</h3>
-              <p className="text-slate-400 font-medium mb-8">
-                {role === 'DRIVER' ? 'Espera a que el cliente suba para iniciar el viaje.' : assignedDriver.name + ' está esperando en tu ubicación.'}
-              </p>
-              {role === 'DRIVER' && (
-                <button 
-                  onClick={handleStartTrip}
-                  className="w-full py-5 moto-gradient text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all text-xl"
-                >
-                  Iniciar Viaje
-                </button>
               )}
-           </div>
-        </div>
-      )}
 
-      {/* Chat View (Internal component for cohesion) */}
-      {isChatOpen && (
-        <div className="absolute inset-0 z-[150] bg-white flex flex-col animate-slideUp">
-          <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-             <div className="flex items-center gap-3">
-                <button onClick={() => { setIsChatOpen(false); setHasNewMessages(false); }} className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
-                   <i className="fa-solid fa-chevron-down"></i>
-                </button>
-                <h3 className="font-black text-slate-900">Chat con el Piloto</h3>
-             </div>
-          </div>
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
-             {messages.map((msg) => (
-               <div key={msg.id} className={`flex ${msg.senderId === myId ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] p-4 rounded-3xl text-sm font-medium ${
-                    msg.senderId === myId 
-                      ? 'bg-blue-600 text-white rounded-tr-none' 
-                      : 'bg-slate-100 text-slate-800 rounded-tl-none'
-                  }`}>
-                    {msg.content}
+              {paymentMethod === 'CASH' && (
+                <div className="bg-green-50 border border-green-100 rounded-3xl p-6 mb-6 text-center animate-fadeIn">
+                  <p className="text-green-800 font-bold">Por favor entrega el efectivo al piloto al subir.</p>
+                </div>
+              )}
+
+              <button 
+                disabled={!paymentMethod}
+                onClick={() => setTripStep('CONFIRMING_PAYMENT')}
+                className={`w-full py-5 font-black rounded-3xl shadow-xl transition-all text-xl ${paymentMethod ? 'moto-gradient text-white active:scale-95' : 'bg-slate-100 text-slate-300'}`}
+              >
+                Confirmar Pago Realizado
+              </button>
+            </div>
+          )}
+
+          {/* ESTADO 3: VALIDACIÓN */}
+          {tripStep === 'CONFIRMING_PAYMENT' && (
+            <div className="mb-10 mx-auto bg-white rounded-[45px] p-10 shadow-2xl flex flex-col items-center animate-fadeIn max-w-sm border border-slate-100">
+              <div className="relative w-24 h-24 mb-8">
+                <div className="absolute inset-0 border-[6px] border-blue-50 rounded-full"></div>
+                <div className="absolute inset-0 border-[6px] border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                <i className="fa-solid fa-shield-check text-blue-600 text-4xl absolute inset-0 flex items-center justify-center"></i>
+              </div>
+              <h2 className="text-2xl font-black text-black text-center mb-2">Validando...</h2>
+              <p className="text-slate-500 text-center font-medium">El motorista está verificando el pago.</p>
+            </div>
+          )}
+
+          {/* ESTADO 4: EN RUTA */}
+          {tripStep === 'IN_TRIP' && (
+            <div className="space-y-4 animate-slideUp">
+              <div className="bg-white rounded-[32px] p-6 shadow-xl border border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
+                     <i className="fa-solid fa-route text-2xl"></i>
                   </div>
-               </div>
-             ))}
-             <div ref={chatEndRef} />
-          </div>
-          <div className="p-6 border-t border-slate-50 pb-10">
-             <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-[28px]">
-                <input 
-                  type="text" 
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                  placeholder="Escribe un mensaje..."
-                  className="flex-1 bg-transparent px-4 py-3 outline-none text-sm font-bold text-slate-900"
-                />
-                <button 
-                  onClick={sendMessage}
-                  className="w-12 h-12 moto-gradient text-white rounded-full flex items-center justify-center shadow-lg"
-                >
-                  <i className="fa-solid fa-paper-plane"></i>
-                </button>
-             </div>
-          </div>
-        </div>
-      )}
+                  <div>
+                     <p className="text-2xl font-black text-black leading-none">{eta.min} <span className="text-sm text-slate-400">min</span></p>
+                     <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-1">Hacia tu destino</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-black text-black leading-none">{eta.km} <span className="text-xs text-slate-400">km</span></p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Distancia</p>
+                </div>
+              </div>
 
-      {/* Action Tray */}
-      <div className="mt-auto relative z-30 bg-white rounded-t-[45px] shadow-[0_-20px_60px_rgba(0,0,0,0.3)] p-8">
-        <div className="w-14 h-1.5 bg-gray-100 rounded-full mx-auto mb-8"></div>
-        <div className="flex items-center gap-4 mb-8">
-           <img src="https://picsum.photos/id/64/150/150" className="w-16 h-16 rounded-2xl object-cover shadow-lg" alt="Avatar" />
-           <div className="flex-1">
-              <h4 className="font-black text-slate-900 text-lg leading-none">{assignedDriver.name}</h4>
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2">HONDA CB125 • ABC-123</p>
-           </div>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-           <button className="flex flex-col items-center gap-1 py-4 bg-slate-50 rounded-2xl text-slate-500">
-              <i className="fa-solid fa-phone text-blue-600"></i>
-              <span className="text-[9px] font-black uppercase">Llamar</span>
-           </button>
-           <button 
-            onClick={() => setIsChatOpen(true)}
-            className="flex flex-col items-center gap-1 py-4 bg-slate-50 rounded-2xl text-slate-500 relative"
-           >
-              <i className="fa-solid fa-message text-blue-600"></i>
-              <span className="text-[9px] font-black uppercase">Chat</span>
-              {hasNewMessages && <div className="absolute top-2 right-6 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>}
-           </button>
-           <button onClick={onCancel} className="flex flex-col items-center gap-1 py-4 bg-red-50 rounded-2xl text-red-500">
-              <i className="fa-solid fa-circle-xmark"></i>
-              <span className="text-[9px] font-black uppercase">Cancelar</span>
-           </button>
+              <div className="bg-white rounded-[32px] p-6 shadow-xl border border-slate-100">
+                <div className="flex items-center gap-4 mb-6">
+                  <img src="https://picsum.photos/id/64/150/150" className="w-14 h-14 rounded-2xl object-cover" alt="Juan" />
+                  <div className="flex-1">
+                     <h4 className="font-black text-black text-lg leading-none">{driver.name}</h4>
+                     <p className="text-slate-400 text-xs font-bold mt-1 uppercase tracking-tighter">{driver.vehicle}</p>
+                  </div>
+                </div>
+                <button onClick={() => setTripStep('COMPLETED')} className="w-full py-4 bg-slate-900 text-white font-black rounded-2xl text-xs uppercase tracking-[0.2em] hover:bg-black transition-all">
+                  Simular Llegada a Destino
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ESTADO 5: CALIFICACIÓN */}
+          {tripStep === 'COMPLETED' && (
+            <div className="bg-white rounded-[45px] p-8 shadow-2xl animate-slideUp">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i className="fa-solid fa-location-check text-green-600 text-2xl"></i>
+                </div>
+                <h2 className="text-2xl font-black text-black leading-tight">¡Llegaste a destino!</h2>
+                <p className="text-slate-500 font-medium">Califica tu viaje con {driver.name}</p>
+              </div>
+              
+              <div className="flex justify-center gap-2 mb-8">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button key={star} onClick={() => setRating(star)} className="transition-all hover:scale-110 p-1">
+                    <i className={`fa-solid fa-star text-4xl ${star <= rating ? 'text-yellow-400 drop-shadow-md' : 'text-slate-100'}`}></i>
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-2 mb-8">
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="¿Alguna sugerencia o comentario? (opcional)"
+                  className="w-full h-28 p-5 bg-slate-50 border border-slate-100 rounded-[28px] focus:outline-none focus:ring-2 focus:ring-blue-500 text-black font-medium text-sm resize-none transition-all"
+                ></textarea>
+              </div>
+
+              <button 
+                onClick={handleFinalize}
+                disabled={rating === 0 || isSubmitting}
+                className={`w-full py-5 font-black rounded-3xl shadow-xl transition-all text-xl flex items-center justify-center gap-3 ${rating > 0 ? 'moto-gradient text-white active:scale-95' : 'bg-slate-100 text-slate-300'}`}
+              >
+                {isSubmitting ? <i className="fa-solid fa-circle-notch animate-spin"></i> : 'Finalizar Viaje'}
+              </button>
+            </div>
+          )}
+
         </div>
       </div>
+
+      <style>{`
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .animate-slideUp { animation: slideUp 0.4s cubic-bezier(0, 0, 0.2, 1); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+      `}</style>
     </div>
   );
 };
