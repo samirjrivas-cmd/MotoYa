@@ -35,6 +35,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
  * permitiendo que la UI cargue correctamente.
  */
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder-id.supabase.co',
-  supabaseAnonKey || 'placeholder-token'
+  supabaseUrl || 'https://opctttcpvfmqtahakxwq.supabase.co',
+  supabaseAnonKey || '9fY4a8CGyp*8g%M'
 );
