@@ -112,42 +112,34 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
         <div className="space-y-4">
           {isRegister && (
-            <>
-              <div className="space-y-1.5 animate-fadeIn">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Nombre Completo</label>
-                <div className="relative">
-                  <i className="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"></i>
-                  <input 
-                    type="text" 
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Ej. Juan Pérez" 
-                    className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none font-bold text-slate-900 transition-all placeholder:text-slate-300" 
-                  />
-                </div>
-              </div>
+  <>
+    {/* Campo Nombre Completo */}
+    <div className="space-y-1 animate-fadeIn">
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre Completo</label>
+      <input 
+        type="text" 
+        value={fullName} 
+        onChange={(e) => setFullName(e.target.value)} 
+        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900" 
+      />
+    </div>
 
-              <div className="space-y-1.5 animate-fadeIn">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Tu Banco</label>
-                <div className="relative">
-                  <i className="fa-solid fa-building-columns absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"></i>
-                  <select 
-                    value={bank}
-                    onChange={(e) => setBank(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none font-bold text-slate-900 transition-all appearance-none"
-                  >
-                    <option>Banco de Venezuela</option>
-                    <option>Banesco</option>
-                    <option>Mercantil</option>
-                    <option>BBVA Provincial</option>
-                    <option>BNC</option>
-                  </select>
-                  <i className="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none text-xs"></i>
-                </div>
-              </div>
-            </>
-          )}
-
+    {/* Campo del Banco - AQUÍ DEBE IR */}
+    <div className="space-y-1 animate-fadeIn">
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tu Banco</label>
+      <select 
+        value={bank} 
+        onChange={(e) => setBank(e.target.value)}
+        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none"
+      >
+        <option value="">Selecciona tu banco</option>
+        <option value="Banco de Venezuela">0102 - Banco de Venezuela</option>
+        <option value="Banesco">0134 - Banesco</option>
+        <option value="Mercantil">0105 - Mercantil</option>
+      </select>
+    </div>
+  </>
+)}
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Correo Electrónico</label>
             <div className="relative">
