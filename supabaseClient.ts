@@ -1,38 +1,29 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * World-class senior frontend engineer note:
- * Accessing environment variables can vary between Vite (import.meta.env) 
- * and other bundlers (process.env). 
- * We use a defensive approach to avoid "Cannot read properties of undefined" errors.
+ * ARQUITECTURA DE CLIENTE SEGURO - MOTODEV
+ * Esta implementación garantiza que la app no rompa si las variables de entorno faltan,
+ * pero notifica claramente al desarrollador.
  */
 
-const getEnv = (key: string): string => {
-  // Check for import.meta.env (Vite standard)
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-    return (import.meta as any).env[key] || '';
-  }
-  // Check for process.env (Webpack/CRA standard)
-  if (typeof process !== 'undefined' && process.env) {
-    return process.env[key] || '';
-  }
-  return '';
-};
+// Extraemos las variables de entorno de forma segura para Vite
+const env = (import.meta as any).env || {};
+const supabaseUrl = env.VITE_SUPABASE_URL;
+const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY;
 
-const supabaseUrl = getEnv('VITE_SUPABASE_URL');
-const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY');
-
+// Diagnóstico de salud de la conexión
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    "Supabase configuration missing: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is undefined. " +
-    "Authentication features will not work until environment variables are configured."
+  console.error(
+    "❌ ERROR DE CONFIGURACIÓN:\n" +
+    "No se detectaron las variables VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY.\n" +
+    "Asegúrate de configurar tu archivo .env o las variables de entorno en tu proveedor de hosting."
   );
+} else {
+  console.log("✅ Supabase Client: Configuración detectada correctamente.");
 }
 
-// We provide empty strings as fallback to prevent the library from throwing an initialization error,
-// but keeping the warnings clear for the developer.
+// Inicialización del cliente con fallbacks para evitar errores de tipo 'undefined' en el constructor
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder-url.supabase.co', 
+  supabaseUrl || 'https://placeholder-project.supabase.co',
   supabaseAnonKey || 'placeholder-key'
 );
