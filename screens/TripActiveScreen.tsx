@@ -1,18 +1,17 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { UserRole } from '../types';
-
-interface TripActiveScreenProps {
-  onCancel: () => void;
-  onGoToPay?: () => void;
-  role?: UserRole;
-}
 
 interface Message {
   id: string;
   senderId: string;
   content: string;
   timestamp: Date;
+}
+
+interface TripActiveScreenProps {
+  onCancel: () => void;
+  onGoToPay?: () => void;
+  role?: UserRole;
 }
 
 type TripStage = 'PICKUP' | 'WAITING_FOR_CLIENT' | 'EN_ROUTE' | 'ARRIVED' | 'RATING';
@@ -99,13 +98,6 @@ const TripActiveScreen: React.FC<TripActiveScreenProps> = ({ onCancel, onGoToPay
       timestamp: new Date()
     };
 
-    console.log("Evento: message.send", { 
-      rideId: 'RIDE_999', 
-      senderId: myId, 
-      receiverId, 
-      content: inputMessage 
-    });
-
     setMessages(prev => [...prev, newMessage]);
     setInputMessage('');
 
@@ -118,7 +110,6 @@ const TripActiveScreen: React.FC<TripActiveScreenProps> = ({ onCancel, onGoToPay
       };
       setMessages(prev => [...prev, reply]);
       if (!isChatOpen) setHasNewMessages(true);
-      console.log("Evento: message.new", reply);
     }, 2000);
   };
 
