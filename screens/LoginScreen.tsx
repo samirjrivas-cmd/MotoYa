@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 
@@ -23,7 +24,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       return false;
     }
     if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres.');
+      setError('Mínimo 6 caracteres.');
       return false;
     }
     return true;
@@ -31,20 +32,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
   const handleLogin = async () => {
     setError('');
-    setSuccessMsg('');
     if (!validateInputs()) return;
-
     setLoading(true);
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
+      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) throw authError;
-
-      // Determinamos el rol (En una app real, esto vendría de una tabla 'profiles')
-      // Para la demo, usamos el dominio como indicador de rol
       const role = email.includes('chofer') ? 'DRIVER' : 'USER';
       onLogin(role);
     } catch (err: any) {
@@ -54,172 +46,91 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     }
   };
 
-  const handleRegister = async () => {
-    setError('');
-    setSuccessMsg('');
-    if (!validateInputs()) return;
-
-    setLoading(true);
-    try {
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            bank_info: bank,
-          },
-        },
-      });
-
-      if (signUpError) throw signUpError;
-      setSuccessMsg('¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.');
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResetPassword = async () => {
-    setError('');
-    setSuccessMsg('');
-    if (!email) {
-      setError('Ingresa tu email para continuar.');
-      return;
-    }
-    setLoading(true);
-    try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email);
-      if (resetError) throw resetError;
-      setSuccessMsg('Se ha enviado un enlace de recuperación a tu correo.');
-      setTimeout(() => setShowReset(false), 3000);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="flex flex-col h-screen p-6 animate-fadeIn bg-white overflow-y-auto no-scrollbar">
-      <div className="flex items-center mb-10">
-        <button onClick={() => { setIsRegister(false); setShowReset(false); }} className="text-gray-800 text-xl">
-          <i className="fa-solid fa-arrow-left"></i>
+    <div className="flex flex-col h-screen p-8 animate-fadeIn bg-slate-50 overflow-y-auto no-scrollbar">
+      <div className="flex items-center mb-8">
+        <button onClick={() => { setIsRegister(false); setShowReset(false); }} className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-800">
+          <i className="fa-solid fa-chevron-left"></i>
         </button>
-        <h1 className="flex-1 text-center font-bold text-lg text-gray-900">
-          {showReset ? 'Recuperar Acceso' : isRegister ? 'Crear Cuenta' : 'Iniciar Sesión'}
-        </h1>
       </div>
 
-      <div className="flex flex-col items-center mb-8">
-        <div className="w-20 h-20 moto-gradient rounded-3xl flex items-center justify-center shadow-lg mb-4">
+      <div className="flex flex-col items-center mb-10 text-center">
+        <div className="w-20 h-20 moto-gradient rounded-[28px] flex items-center justify-center shadow-xl mb-4 rotate-3">
           <i className="fa-solid fa-motorcycle text-white text-3xl"></i>
         </div>
-        <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">MotoYa</h2>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tighter">MotoYa</h1>
+        <p className="text-slate-400 font-medium text-sm">Tu ciudad a un clic de distancia</p>
       </div>
 
-      <div className="space-y-6 pb-10">
-        <div className="text-center">
-          <h3 className="text-xl font-bold text-gray-800">
-            {showReset ? '¿Olvidaste tu clave?' : isRegister ? 'Únete a la red más rápida' : '¡Hola de nuevo! 👋'}
-          </h3>
-          <p className="text-gray-400 text-xs mt-1">
-            {showReset ? 'Te enviaremos un link a tu correo' : 'Completa los datos para continuar'}
-          </p>
-        </div>
+      <div className="bg-white rounded-[32px] p-6 shadow-xl shadow-slate-200/50 space-y-5">
+        <h3 className="text-xl font-extrabold text-slate-800 text-center">
+          {showReset ? 'Recuperar Cuenta' : isRegister ? 'Únete hoy' : 'Bienvenido'}
+        </h3>
 
         <div className="space-y-4">
-          {isRegister && !showReset && (
-             <div className="space-y-4 animate-fadeIn">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nombre Completo</label>
-                  <input 
-                    type="text" 
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Juan Pérez" 
-                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-black" 
-                  />
-                </div>
-                
-                <div className="p-4 bg-blue-50 rounded-3xl space-y-4 border border-blue-100">
-                   <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] text-center">Datos de Pago</p>
-                   <div className="space-y-1">
-                      <select 
-                        value={bank}
-                        onChange={(e) => setBank(e.target.value)}
-                        className="w-full p-4 bg-white border border-blue-100 rounded-2xl outline-none font-bold text-black appearance-none"
-                      >
-                        <option value="">Selecciona tu banco</option>
-                        <option value="0102">0102 - Banco de Venezuela</option>
-                        <option value="0134">0134 - Banesco</option>
-                      </select>
-                   </div>
-                </div>
-             </div>
+          {isRegister && (
+            <div className="space-y-1 animate-fadeIn">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre Completo</label>
+              <input 
+                type="text" 
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Ej. Juan Pérez" 
+                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-900" 
+              />
+            </div>
           )}
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Correo Electrónico</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Correo Electrónico</label>
             <input 
               type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@email.com" 
-              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-black transition-colors" 
+              placeholder="correo@ejemplo.com" 
+              className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-900 transition-all" 
             />
           </div>
 
           {!showReset && (
             <div className="space-y-1">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Contraseña</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contraseña</label>
               <input 
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••" 
-                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-black transition-colors" 
+                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-900" 
               />
             </div>
           )}
         </div>
 
-        {error && <p className="text-red-500 text-xs font-bold text-center animate-shake">{error}</p>}
-        {successMsg && <p className="text-green-600 text-xs font-bold text-center bg-green-50 p-3 rounded-xl border border-green-100">{successMsg}</p>}
+        {error && <p className="text-red-500 text-[10px] font-black text-center bg-red-50 p-2 rounded-lg border border-red-100">{error}</p>}
+        {successMsg && <p className="text-green-600 text-[10px] font-black text-center bg-green-50 p-2 rounded-lg border border-green-100">{successMsg}</p>}
 
-        {!showReset ? (
-          <button 
-            onClick={isRegister ? handleRegister : handleLogin}
-            disabled={loading}
-            className="w-full py-5 moto-gradient text-white font-black rounded-3xl shadow-xl active:scale-[0.98] transition-all text-lg flex items-center justify-center gap-2"
-          >
-            {loading && <i className="fa-solid fa-circle-notch animate-spin"></i>}
-            {isRegister ? 'Registrarme' : 'Entrar'}
-          </button>
-        ) : (
-          <button 
-            onClick={handleResetPassword}
-            disabled={loading}
-            className="w-full py-5 bg-slate-900 text-white font-black rounded-3xl shadow-xl active:scale-[0.98] transition-all text-lg flex items-center justify-center gap-2"
-          >
-            {loading && <i className="fa-solid fa-circle-notch animate-spin"></i>}
-            Enviar Enlace
-          </button>
-        )}
+        <button 
+          onClick={showReset ? () => {} : (isRegister ? () => {} : handleLogin)}
+          disabled={loading}
+          className="w-full py-5 moto-gradient text-white font-black rounded-2xl shadow-lg active:scale-[0.98] transition-all text-lg flex items-center justify-center gap-2"
+        >
+          {loading ? <i className="fa-solid fa-circle-notch animate-spin"></i> : (showReset ? 'Enviar Link' : isRegister ? 'Registrarme' : 'Entrar')}
+        </button>
 
-        {!isRegister && !showReset && (
-          <button onClick={() => setShowReset(true)} className="w-full text-center text-blue-600 text-xs font-bold uppercase tracking-widest">
-            ¿Olvidaste tu contraseña?
+        <div className="flex flex-col gap-3">
+          {!isRegister && !showReset && (
+            <button onClick={() => setShowReset(true)} className="text-blue-600 text-[10px] font-black uppercase tracking-widest">
+              ¿Olvidaste tu contraseña?
+            </button>
+          )}
+          <button onClick={() => setIsRegister(!isRegister)} className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
+            {isRegister ? 'Ya tengo cuenta' : 'Crear nueva cuenta'}
           </button>
-        )}
-
-        <p className="text-center text-gray-500 text-sm">
-          {isRegister ? '¿Ya tienes cuenta?' : '¿No tienes una cuenta?'} 
-          <button onClick={() => setIsRegister(!isRegister)} className="text-blue-600 font-black ml-1 uppercase text-xs tracking-widest">
-            {isRegister ? 'Inicia Sesión' : 'Regístrate'}
-          </button>
-        </p>
+        </div>
+      </div>
+      
+      <div className="mt-10 text-center">
+        <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Al continuar, aceptas nuestros términos</p>
       </div>
     </div>
   );
